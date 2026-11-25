@@ -1,0 +1,23 @@
+
+# Entorno virtual
+venv/
+.venv/
+
+# Archivos de Python
+__pycache__/
+*.py[cod]
+
+# Configuración y datos privados
+.env
+.env.*
+
+# Bases de datos locales
+*.db
+*.sqlite
+*.sqlite3
+
+# Archivos de macOS
+.DS_Store
+
+# Archivos temporales
+*.log
