@@ -1,0 +1,679 @@
+{
+	"info": {
+		"_postman_id": "3906ba9d-cea3-4cdf-865f-5de1a445b395",
+		"name": "PORTLOG - API Gateway (Colección consolidada)",
+		"description": "Colección consolidada para probar PORTLOG a través del API Gateway (puerto 5000). Usa datos de prueba. Inventario y Operaciones requieren Bearer token y permisos según rol. No contiene credenciales ni tokens reales.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "60405825",
+		"_collection_link": "https://chioeltenorio-8430400.postman.co/workspace/7cac4e5d-6b05-4c97-8c3c-4a8e7a9a71ae/collection/60405825-3906ba9d-cea3-4cdf-865f-5de1a445b395?action=share&source=collection_link&creator=60405825"
+	},
+	"item": [
+		{
+			"name": "01. Gateway",
+			"item": [
+				{
+					"name": "Health del Gateway",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/health",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"health"
+							]
+						},
+						"description": "Comprueba que el API Gateway esté activo."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "02. Autenticación",
+			"item": [
+				{
+					"name": "Health de Auth",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/health",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"health"
+							]
+						},
+						"description": "Verifica Auth a través del Gateway."
+					},
+					"response": []
+				},
+				{
+					"name": "Registrar usuario",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"Usuario de prueba\",\n  \"correo\": \"usuario@portlog.test\",\n  \"password\": \"CAMBIAR_PASSWORD\",\n  \"rol\": \"agente_aduanal\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"register"
+							]
+						},
+						"description": "Usa datos de prueba."
+					},
+					"response": []
+				},
+				{
+					"name": "Iniciar sesión",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Login responde con éxito', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });",
+									"try {",
+									"  const data = pm.response.json();",
+									"  const token = data.token || data.access_token || (data.usuario && data.usuario.token);",
+									"  if (token) { pm.collectionVariables.set('token', token); console.log('Token guardado en variable token.'); }",
+									"  else { console.log('No se detectó el campo token; copia el token de la respuesta y guárdalo en la variable token.'); }",
+									"} catch (e) { console.log('La respuesta no contiene JSON válido.'); }"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"correo\": \"usuario@portlog.test\",\n  \"password\": \"CAMBIAR_PASSWORD\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Intenta guardar automáticamente el token si la respuesta usa el campo token o access_token."
+					},
+					"response": []
+				},
+				{
+					"name": "Consultar sesión",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/me",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"me"
+							]
+						},
+						"description": "Requiere token Bearer."
+					},
+					"response": []
+				},
+				{
+					"name": "Cerrar sesión",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/logout",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"logout"
+							]
+						},
+						"description": "Requiere token Bearer."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "03. Inventario",
+			"item": [
+				{
+					"name": "Health de Inventario",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/inventory/health",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"inventory",
+								"health"
+							]
+						},
+						"description": "La documentación indica que requiere token."
+					},
+					"response": []
+				},
+				{
+					"name": "Listar contenedores",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/inventory/containers",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"inventory",
+								"containers"
+							]
+						},
+						"description": "Ambos roles pueden consultar."
+					},
+					"response": []
+				},
+				{
+					"name": "Registrar contenedor",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"numero\": \"MSCU1234567\",\n  \"descripcion\": \"Carga general de productos\",\n  \"tipo\": \"seco\",\n  \"peso_kg\": 18500,\n  \"transportista\": \"Transportes del Sureste\",\n  \"origen\": \"Veracruz\",\n  \"destino\": \"Merida\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/inventory/containers",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"inventory",
+								"containers"
+							]
+						},
+						"description": "Solo agente aduanal."
+					},
+					"response": []
+				},
+				{
+					"name": "Consultar contenedor",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/inventory/containers/{{numero}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"inventory",
+								"containers",
+								"{{numero}}"
+							]
+						},
+						"description": "Ambos roles pueden consultar."
+					},
+					"response": []
+				},
+				{
+					"name": "Actualizar contenedor",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"descripcion\": \"Carga general de productos electrónicos\",\n  \"peso_kg\": 19000,\n  \"destino\": \"Progreso\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/inventory/containers/{{numero}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"inventory",
+								"containers",
+								"{{numero}}"
+							]
+						},
+						"description": "Solo agente aduanal."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "04. Operaciones",
+			"item": [
+				{
+					"name": "Health de Operaciones",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/operations/health",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"operations",
+								"health"
+							]
+						},
+						"description": "La documentación indica que requiere token."
+					},
+					"response": []
+				},
+				{
+					"name": "Consultar todos los movimientos",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/operations/movements",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"operations",
+								"movements"
+							]
+						},
+						"description": "Ambos roles pueden consultar."
+					},
+					"response": []
+				},
+				{
+					"name": "Consultar movimientos por contenedor",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/operations/movements?numero={{numero}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"operations",
+								"movements"
+							],
+							"query": [
+								{
+									"key": "numero",
+									"value": "{{numero}}"
+								}
+							]
+						},
+						"description": "Filtra por número de contenedor."
+					},
+					"response": []
+				},
+				{
+					"name": "Registrar entrada",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"numero\": \"MSCU1234567\",\n  \"tipo_operacion\": \"entrada\",\n  \"observaciones\": \"Ingreso de contenedor al puerto\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/operations/movements",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"operations",
+								"movements"
+							]
+						},
+						"description": "Solo transportista."
+					},
+					"response": []
+				},
+				{
+					"name": "Registrar salida",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"numero\": \"MSCU1234567\",\n  \"tipo_operacion\": \"salida\",\n  \"observaciones\": \"Salida de contenedor del puerto\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/operations/movements",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"operations",
+								"movements"
+							]
+						},
+						"description": "Solo transportista."
+					},
+					"response": []
+				},
+				{
+					"name": "Registrar liberación aduanal",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"numero\": \"MSCU1234567\",\n  \"tipo_operacion\": \"liberacion_aduanal\",\n  \"observaciones\": \"Liberación aduanal autorizada\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/operations/movements",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"operations",
+								"movements"
+							]
+						},
+						"description": "Solo agente aduanal."
+					},
+					"response": []
+				},
+				{
+					"name": "Consultar estado del contenedor",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/operations/containers/{{numero}}/status",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"operations",
+								"containers",
+								"{{numero}}",
+								"status"
+							]
+						},
+						"description": "Ambos roles pueden consultar."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://127.0.0.1:5000",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "numero",
+			"value": "MSCU1234567",
+			"type": "string"
+		}
+	]
+}
