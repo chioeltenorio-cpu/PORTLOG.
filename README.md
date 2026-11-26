@@ -69,9 +69,6 @@ PORTLOG/
 └── venv/  (solo entorno local; no subir a Git)
 ```
 
-Actualiza este árbol si cambia la estructura o si alguno de los archivos
-indicados no se incluye en la entrega.
-
 ## 6. Funcionalidades
 
 **Autenticación** - Registro e inicio/cierre de sesión. - Validación de
@@ -147,13 +144,19 @@ Flask, requests, Flask-Cors y python-dotenv.
 
 PORTLOG utiliza tres bases de datos SQLite independientes:
 
-- `auth_service/data/auth.db`
-- `inventory_service/data/inventory.db`
-- `operations_service/data/operations.db`
+-   `auth_service/data/auth.db`
+-   `inventory_service/data/inventory.db`
+-   `operations_service/data/operations.db`
 
-Las carpetas `data/` se crean automáticamente al iniciar los microservicios. Cada servicio ejecuta su función `inicializar_db()` y crea sus tablas si todavía no existen. SQLite crea el archivo `.db` al abrir la conexión.
+Las carpetas `data/` se crean automáticamente al iniciar los
+microservicios. Cada servicio ejecuta su función `inicializar_db()` y
+crea sus tablas si todavía no existen. SQLite crea el archivo `.db` al
+abrir la conexión.
 
-Por lo tanto, los archivos de base de datos no necesitan incluirse en GitHub para una instalación nueva. No publiques bases con información personal, credenciales reales, tokens o datos privados; utiliza datos de prueba.
+Por lo tanto, los archivos de base de datos no necesitan incluirse en
+GitHub para una instalación nueva. No publiques bases con información
+personal, credenciales reales, tokens o datos privados; utiliza datos de
+prueba.
 
 ### 9.5 Configuración
 
@@ -175,17 +178,21 @@ el `.env` real.
 
 ## 10. Ejecución automática
 
-Desde la carpeta principal del proyecto, concede permiso de ejecución al script:
+Desde la carpeta principal del proyecto, concede permiso de ejecución al
+script:
 
-```bash
+``` bash
 chmod +x iniciar_portlog.sh
 ```
 
-En la primera ejecución, el script crea el entorno virtual `venv` si no existe, instala las dependencias de `requirements.txt`, crea las carpetas `data/` y arranca los cinco componentes. También comprueba que cada servicio responda antes de continuar.
+En la primera ejecución, el script crea el entorno virtual `venv` si no
+existe, instala las dependencias de `requirements.txt`, crea las
+carpetas `data/` y arranca los cinco componentes. También comprueba que
+cada servicio responda antes de continuar.
 
 Inicia PORTLOG con:
 
-```bash
+``` bash
 ./iniciar_portlog.sh
 ```
 
@@ -193,9 +200,13 @@ Abre en el navegador:
 
 `http://127.0.0.1:5500`
 
-Para detener el conjunto, presiona `Ctrl + C` en la terminal donde ejecutaste el script. No lo ejecutes si ya hay procesos ocupando los puertos 5000, 5001, 5002, 5003 o 5500.
+Para detener el conjunto, presiona `Ctrl + C` en la terminal donde
+ejecutaste el script. No lo ejecutes si ya hay procesos ocupando los
+puertos 5000, 5001, 5002, 5003 o 5500.
 
-**Requisito:** Python 3 debe estar instalado y disponible como `python3`. La instalación de dependencias requiere conexión a Internet en la primera ejecución.
+**Requisito:** Python 3 debe estar instalado y disponible como
+`python3`. La instalación de dependencias requiere conexión a Internet
+en la primera ejecución.
 
 ## 11. Ejecución manual
 
@@ -268,25 +279,118 @@ el transportista. - Restricciones de registro y edición de contenedores
 según el rol. - Rechazo de una liberación aduanal solicitada por un
 transportista, con HTTP 403.
 
+### 14.1 Registro inicial de usuarios e inicio de sesión
+
+Cuando PORTLOG se instala por primera vez, las bases de datos y sus
+tablas se crean automáticamente, pero la base de datos de autenticación
+comienza sin usuarios. Para utilizar el sistema, primero se deben
+registrar los usuarios de prueba.
+
+El registro y el inicio de sesión se realizan mediante el API Gateway y
+no requieren un token previo.
+
+#### Registrar un usuario
+
+**Método:** `POST`
+
+**Endpoint:** `http://127.0.0.1:5000/api/auth/register`
+
+En Postman, seleccionar **Body → raw → JSON** y enviar una solicitud
+como la siguiente:
+
+``` json
+{
+  "nombre": "Agente de Prueba",
+  "correo": "agente@portlog.test",
+  "password": "ClaveDePrueba123",
+  "rol": "agente_aduanal"
+}
+```
+
+Los cuatro campos son obligatorios:
+
+-   `nombre`: nombre del usuario.
+-   `correo`: correo electrónico con formato válido.
+-   `password`: contraseña de al menos 8 caracteres.
+-   `rol`: rol asignado al usuario.
+
+Los roles admitidos por la implementación son:
+
+-   `agente_aduanal`
+-   `transportista`
+
+Para registrar un transportista, se utiliza el mismo endpoint y se envía
+`"rol": "transportista"`. Utiliza un correo diferente para cada usuario.
+
+Si el registro es correcto, el servicio devuelve HTTP `201` y los datos
+del usuario creado. Si faltan campos, el correo no tiene un formato
+válido, la contraseña tiene menos de 8 caracteres o el rol no está
+permitido, devuelve HTTP `400`. Si el correo ya está registrado,
+devuelve HTTP `409`.
+
+#### Iniciar sesión
+
+Después de registrar el usuario, enviar:
+
+**Método:** `POST`
+
+**Endpoint:** `http://127.0.0.1:5000/api/auth/login`
+
+En Postman, seleccionar **Body → raw → JSON**:
+
+``` json
+{
+  "correo": "agente@portlog.test",
+  "password": "ClaveDePrueba123"
+}
+```
+
+Si las credenciales son correctas, el servicio devuelve HTTP `200`, un
+mensaje de confirmación, los datos del usuario y un token de acceso. Si
+el correo o la contraseña no son correctos, devuelve HTTP `401`.
+
+#### Utilizar el token
+
+Para realizar solicitudes protegidas a los servicios de inventario y
+operaciones, incluir el token recibido al iniciar sesión en la cabecera
+HTTP:
+
+``` http
+Authorization: Bearer TU_TOKEN
+```
+
+El token tiene una vigencia de 8 horas. Al expirar, el usuario debe
+iniciar sesión nuevamente para obtener otro token.
+
+**Consideración de seguridad:** en la implementación actual, el endpoint
+de registro permite que quien lo invoque seleccione cualquiera de los
+dos roles admitidos. Esto es adecuado para crear usuarios de prueba
+durante la práctica, pero en un entorno de producción el registro y la
+asignación de roles deben restringirse a personal autorizado. No
+publiques contraseñas, tokens ni bases de datos que contengan
+información privada.
+
 ## 15. Evidencias
 
-Las capturas de las pruebas funcionales y de ejecución se encuentran en `docs/evidencias/`:
+Las capturas de las pruebas funcionales y de ejecución se encuentran en
+`docs/evidencias/`:
 
-1. `01_health_gateway.png`
-2. `02_login_agente.png`
-3. `03_consultar_sesion_agente.png`
-4. `04_listar_contenedores.png`
-5. `05_registrar_contenedor.png`
-6. `06_actualizar_contenedor.png`
-7. `07_consultar_movimientos.png`
-8. `08_login_transportista.png`
-9. `09_entrada_transportista.png`
+1.  `01_health_gateway.png`
+2.  `02_login_agente.png`
+3.  `03_consultar_sesion_agente.png`
+4.  `04_listar_contenedores.png`
+5.  `05_registrar_contenedor.png`
+6.  `06_actualizar_contenedor.png`
+7.  `07_consultar_movimientos.png`
+8.  `08_login_transportista.png`
+9.  `09_entrada_transportista.png`
 10. `10_salida_transportista.png`
 11. `11_liberacion_aduanal.png`
 12. `12_bloqueo_http_403.png`
 13. `13_servicios_activos.png`
 
-Las capturas de autenticación se prepararon ocultando contraseñas y tokens. No publiques credenciales ni tokens reales.
+Las capturas de autenticación se prepararon ocultando contraseñas y
+tokens. No publiques credenciales ni tokens reales.
 
 ## 16. Conclusión
 
