@@ -17,6 +17,9 @@ app = Flask(__name__)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "data", "auth.db")
 
+# Crear la carpeta de datos si aún no existe.
+os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+
 # Roles permitidos para el registro
 ROLES = ("agente_aduanal", "transportista")
 

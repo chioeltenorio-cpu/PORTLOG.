@@ -49,16 +49,10 @@ PORTLOG/
 ├── api_gateway/
 │   └── app.py
 ├── auth_service/
-│   ├── data/
-│   │   └── auth.db
 │   └── app.py
 ├── inventory_service/
-│   ├── data/
-│   │   └── inventory.db
 │   └── app.py
 ├── operations_service/
-│   ├── data/
-│   │   └── operations.db
 │   └── app.py
 ├── database/
 ├── docs/
@@ -151,18 +145,15 @@ Flask, requests, Flask-Cors y python-dotenv.
 
 ### 9.4 Bases de datos
 
-El proyecto utiliza estas bases SQLite:
+PORTLOG utiliza tres bases de datos SQLite independientes:
 
--   `auth_service/data/auth.db`
--   `inventory_service/data/inventory.db`
--   `operations_service/data/operations.db`
+- `auth_service/data/auth.db`
+- `inventory_service/data/inventory.db`
+- `operations_service/data/operations.db`
 
-Conserva la estructura de carpetas y los archivos de base de datos de la
-versión local. Antes de distribuir una instalación limpia, verifica en
-cada microservicio cómo se inicializan las tablas y si las bases se
-crean automáticamente al arrancar. No publiques bases con información
-personal, credenciales reales, tokens o datos privados; utiliza datos de
-prueba.
+Las carpetas `data/` se crean automáticamente al iniciar los microservicios. Cada servicio ejecuta su función `inicializar_db()` y crea sus tablas si todavía no existen. SQLite crea el archivo `.db` al abrir la conexión.
+
+Por lo tanto, los archivos de base de datos no necesitan incluirse en GitHub para una instalación nueva. No publiques bases con información personal, credenciales reales, tokens o datos privados; utiliza datos de prueba.
 
 ### 9.5 Configuración
 
@@ -184,28 +175,27 @@ el `.env` real.
 
 ## 10. Ejecución automática
 
-Desde la carpeta principal, activa el entorno virtual y concede permiso
-de ejecución al script:
+Desde la carpeta principal del proyecto, concede permiso de ejecución al script:
 
-``` bash
-source venv/bin/activate
+```bash
 chmod +x iniciar_portlog.sh
 ```
 
-Inicia los servicios:
+En la primera ejecución, el script crea el entorno virtual `venv` si no existe, instala las dependencias de `requirements.txt`, crea las carpetas `data/` y arranca los cinco componentes. También comprueba que cada servicio responda antes de continuar.
 
-``` bash
+Inicia PORTLOG con:
+
+```bash
 ./iniciar_portlog.sh
 ```
 
-El script inicia Auth, Inventory, Operations, API Gateway y el servidor
-del frontend. Abre:
+Abre en el navegador:
 
 `http://127.0.0.1:5500`
 
-Para detener el conjunto, presiona `Ctrl + C` en la terminal donde
-ejecutaste el script. No lo ejecutes si ya hay procesos ocupando los
-puertos 5000, 5001, 5002, 5003 o 5500.
+Para detener el conjunto, presiona `Ctrl + C` en la terminal donde ejecutaste el script. No lo ejecutes si ya hay procesos ocupando los puertos 5000, 5001, 5002, 5003 o 5500.
+
+**Requisito:** Python 3 debe estar instalado y disponible como `python3`. La instalación de dependencias requiere conexión a Internet en la primera ejecución.
 
 ## 11. Ejecución manual
 
@@ -280,19 +270,23 @@ transportista, con HTTP 403.
 
 ## 15. Evidencias
 
-Organiza las capturas reales en `docs/evidencias/`. Se sugieren estos
-nombres:
+Las capturas de las pruebas funcionales y de ejecución se encuentran en `docs/evidencias/`:
 
--   `01_login_agente.png`
--   `02_login_transportista.png`
--   `03_inventario.png`
--   `04_liberacion_aduanal.png`
--   `05_entrada_transportista.png`
--   `06_salida_transportista.png`
--   `07_bloqueo_http_403.png`
--   `08_servicios_activos.png`
+1. `01_health_gateway.png`
+2. `02_login_agente.png`
+3. `03_consultar_sesion_agente.png`
+4. `04_listar_contenedores.png`
+5. `05_registrar_contenedor.png`
+6. `06_actualizar_contenedor.png`
+7. `07_consultar_movimientos.png`
+8. `08_login_transportista.png`
+9. `09_entrada_transportista.png`
+10. `10_salida_transportista.png`
+11. `11_liberacion_aduanal.png`
+12. `12_bloqueo_http_403.png`
+13. `13_servicios_activos.png`
 
-No incluyas contraseñas ni tokens en las capturas.
+Las capturas de autenticación se prepararon ocultando contraseñas y tokens. No publiques credenciales ni tokens reales.
 
 ## 16. Conclusión
 
